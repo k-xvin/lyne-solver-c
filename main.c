@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     if(pBoard == NULL) return 1;
 
     // solve the board
-    solveBoard(pBoard);
+    // solveBoard(pBoard);
 
     // free board
     free(pBoard);
@@ -164,6 +164,12 @@ void printBoard(Tile * pBoard){
 
 int pos2D(int row, int col){
     return row*boardWidth + col;
+}
+bool isBoardSolved(Tile * pBoard){
+    return false;
+}
+bool isColorFilled(Tile * pBoard, Color color){
+    return false;
 }
 
 void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color){

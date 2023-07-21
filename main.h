@@ -13,8 +13,8 @@ typedef struct Tile {
 } Tile;
 
 static int directions[8][2] = {
-    
-}
+
+};
 
 // Functions
 Tile * mallocBoardFromFile(char * fileName);
@@ -26,4 +26,3 @@ void printBoard(Tile * pBoard);
 void moveAndSolve(Tile * pBoard, int row, int column, Color color); 
 bool isBoardSolved(Tile * pBoard);
 bool isColorFilled(Tile * pBoard, Color color);
-bool isMoveValid(Tile * pBoard, int row, int column);
