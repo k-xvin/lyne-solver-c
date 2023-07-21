@@ -4,7 +4,6 @@
 
 #include "main.h"
 
-
 // Globals
 static int fileWidth = 0;
 static int fileHeight = 0;
@@ -163,6 +162,54 @@ void printBoard(Tile * pBoard){
     }
 }
 
-void solveBoard(Tile *pBoard){
-    printBoard(pBoard);
+int pos2D(int row, int col){
+    return row*boardWidth + col;
+}
+
+void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color){
+    // Board is solved, print solution
+    if(isBoardSolved(pBoard)){
+        printBoard(pBoard);
+        return;
+    }
+
+    // Current position on a TERMINAL
+    Tile currentTile = pBoard[pos2D(currentRow, currentColumn)];
+    if(currentTile.type == TERMINAL){
+        // check if the color is completed
+        if(isColorFilled(pBoard, currentTile.color)){
+            // if complete, we need to jump to another color's start terminal
+            // moveAndSolve()
+        }
+        else {
+            // this is a starting terminal
+            // OR
+            // path does not cover all colored nodes for this path
+            
+            // either way,
+            // go look for valid directions to move
+            // (if none) -> this path is a dead end and we go back up
+        }
+    }
+
+    // Move in the first valid direction we find 
+    // (up/down/left/right)
+    // (upleft/upright/downleft/downright)
+    for(int i=0; i<8; i++){
+        // pick a direction
+        
+        // Each move is 2 moves in that direction (move to EDGE then move to NODE)
+        // Make sure move is in bounds
+        // Check if EDGE has connection space (1 away)
+        // Check if NODE or TERMINAL has connection space (2 away)
+
+        // Move is valid
+        // Save the move
+        // Update the board
+        // moveAndSolve()
+        // Undo the move and update the board
+    }
+
+    // All moves from current position have been explored
+    return;
 }
