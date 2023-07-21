@@ -2,24 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_WIDTH 20
+#include "main.h"
 
-// Structs
-typedef enum Color { A_DIAMOND, B_TRIANGLE, C_SQUARE, X_NEUTRAL } Color;
-typedef enum Type { EDGE, NODE, TERMINAL} Type;
-
-typedef struct Tile {
-    char c;
-    Color color;
-    Type type;
-    int maxConnections;
-    int currentConnections;
-} Tile;
-
-// Functions
-void solveBoard(Tile * pBoard);
-void initializeTile(Tile * tile, char c);
-void initializeBoard(Tile * pBoard);
 
 // Globals
 static int fileWidth = 0;
@@ -33,15 +17,33 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // Create board from file name
+    char * fileName = argv[1];
+    Tile * pBoard = mallocBoardFromFile(fileName);
+    if(pBoard == NULL) return 1;
+
+    // solve the board
+    solveBoard(pBoard);
+
+    // free board
+    free(pBoard);
+
+    printf("\n\ndone\n");
+    return 0;
+}
+
+Tile * mallocBoardFromFile(char * fileName){
+#define MAX_WIDTH 20
+    
     // open the file
     FILE *file;
     char line[MAX_WIDTH];
-    file = fopen(argv[1], "r");
+    file = fopen(fileName, "r");
     if (file == NULL) {
         printf("Unable to open the file.\n");
-        return 1;
+        return NULL;
     }
-    printf("Reading \"%s\" ...\n", argv[1]);
+    printf("Reading \"%s\" ...\n", fileName);
 
     // First, read the board file to get the size of the board
     while (fgets(line, MAX_WIDTH, file) != NULL) {
@@ -53,13 +55,21 @@ int main(int argc, char *argv[]) {
         // every line is one row of the board
         fileHeight++;
     }
-    // board width and height also fits in "edge" tiles around every node tile
+    // increase boardWidth and height to fit in "edge" tiles
     boardWidth = 2*fileWidth - 1;
     boardHeight = 2*fileHeight - 1;
 
-    // use 1d array in order to represent 2d array as contiguous memory
-    Tile *pBoard = malloc(sizeof(Tile)*boardWidth*boardHeight);
-    initializeBoard(pBoard);
+    // malloc board as a 1d array for contiguous memory
+    // (we will address it as 2d with [row*width + col])
+    Tile * pBoard = malloc(sizeof(Tile)*boardWidth*boardHeight);
+
+    // go through board and make all the tiles edge tiles
+    for(int i=0;i<boardHeight;i++){
+        for(int j=0;j<boardWidth;j++){
+            Tile * t = &pBoard[i*boardWidth + j];
+            initializeTile(t, '.');
+        }
+    }
 
     // reset file back to beginning
     fseek(file, 0, SEEK_SET);
@@ -80,28 +90,21 @@ int main(int argc, char *argv[]) {
     // close file; we are done
     fclose(file);
 
-    // solve the board
-    solveBoard(pBoard);
-
-    // free board
-    free(pBoard);
-
-    printf("\n\ndone\n");
-    return 0;
+    return pBoard;
 }
 
 // Initialize tile with values based on c
 // Must pass in the tile you want to initialize
-void initializeTile(Tile * tile, char c){
+void initializeTile(Tile * tile, char ch){
     // tile defaults
-    tile->c = c;
+    tile->ch = ch;
     tile->type = NODE;
     tile->color = X_NEUTRAL;
     tile->currentConnections = 0;
     tile->maxConnections = 1;
     
     // change defaults depending on case
-    switch(c){
+    switch(ch){
         // colored tiles
         case 'A':
             tile->type = TERMINAL;
@@ -133,7 +136,7 @@ void initializeTile(Tile * tile, char c){
             break;
 
         // edge tile
-        case 'e':
+        case '.':
             tile->type = EDGE;
             break;
 
@@ -146,25 +149,20 @@ void initializeTile(Tile * tile, char c){
     // tile is initialized from pointer, all done
 }
 
-void initializeBoard(Tile *pBoard){
-    // go through board and make all the tiles edge tiles
+void printBoard(Tile * pBoard){
+    // i - row
+    // j - col
+    printf("\n");
     for(int i=0;i<boardHeight;i++){
         for(int j=0;j<boardWidth;j++){
             Tile * t = &pBoard[i*boardWidth + j];
-            initializeTile(t, 'e');
+            // printf("%c | color: %d | type: %d | max: %d \n", t->c, t->color, t-> type, t->maxConnections);
+            printf("%c", t->ch);
         }
+        printf("\n");
     }
 }
 
 void solveBoard(Tile *pBoard){
-    // for(int i=0;i<boardHeight;i++){
-    //     for(int j=0;j<boardWidth;j++){
-    //         Tile * t = &pBoard[i*boardWidth + j];
-    //         printf("%c | color: %d | type: %d | max: %d \n", t->c, t->color, t-> type, t->maxConnections);
-    //     }
-    //     printf("\n");
-    // }
-    // printf("h: %d, w: %d \n", boardHeight,boardWidth);
-
-    
+    printBoard(pBoard);
 }
