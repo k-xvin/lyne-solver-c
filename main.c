@@ -265,7 +265,15 @@ void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color)
             // locate an unfilled color terminal and move there
             printf("path is valid\n");
             Tile * newTerminal = getFirstAvailiableTerminal(pBoard);
-            moveAndSolve(pBoard, newTerminal->row, newTerminal->col, newTerminal->color);
+            if(newTerminal == NULL){
+                // all terminals are filled but the board is not solved
+                // (the final path is valid but did not solve the board)
+                // (so it is still a dead end)
+                return;
+            }
+            else {
+                moveAndSolve(pBoard, newTerminal->row, newTerminal->col, newTerminal->color);
+            }
             // we're back, reset the terminal we moved onto and this a dead end
             newTerminal->currentConnections = 0;
             return;
