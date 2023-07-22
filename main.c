@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
 
     // solve the board
     // solveBoard(pBoard);
+    Tile * startingTerminal = getFirstAvailiableTerminal(pBoard);
+    moveAndSolve(pBoard, startingTerminal->row, startingTerminal->col, startingTerminal->color);
 
     // free board
     free(pBoard);
@@ -66,7 +68,7 @@ Tile * mallocBoardFromFile(char * fileName){
     for(int i=0;i<boardHeight;i++){
         for(int j=0;j<boardWidth;j++){
             Tile * t = &pBoard[i*boardWidth + j];
-            initializeTile(t, '.');
+            initializeTile(t, '.', i, j);
         }
     }
 
@@ -81,7 +83,7 @@ Tile * mallocBoardFromFile(char * fileName){
             char currentChar = line[fileCol];
             int row = fileRow * 2;
             int col = fileCol * 2;
-            initializeTile(&pBoard[row*boardWidth + col], currentChar);
+            initializeTile(&pBoard[pos2D(row, col)], currentChar, row, col);
         }
         fileRow++;
     }
@@ -94,8 +96,10 @@ Tile * mallocBoardFromFile(char * fileName){
 
 // Initialize tile with values based on c
 // Must pass in the tile you want to initialize
-void initializeTile(Tile * tile, char ch){
+void initializeTile(Tile * tile, char ch, int row, int col){
     // tile defaults
+    tile->row = row;
+    tile->col = col;
     tile->ch = ch;
     tile->type = NODE;
     tile->color = X_NEUTRAL;
@@ -154,7 +158,7 @@ void printBoard(Tile * pBoard){
     printf("\n");
     for(int i=0;i<boardHeight;i++){
         for(int j=0;j<boardWidth;j++){
-            Tile * t = &pBoard[i*boardWidth + j];
+            Tile * t = &pBoard[pos2D(i, j)];
             // printf("%c | color: %d | type: %d | max: %d \n", t->c, t->color, t-> type, t->maxConnections);
             printf("%c", t->ch);
         }
@@ -166,35 +170,110 @@ int pos2D(int row, int col){
     return row*boardWidth + col;
 }
 bool isBoardSolved(Tile * pBoard){
-    return false;
+    // i - row
+    // j - col
+    for(int i=0;i<boardHeight;i++){
+        for(int j=0;j<boardWidth;j++){
+            Tile * t = &pBoard[pos2D(i, j)];
+            // For all NODE and TERMINALs
+            // If connections are not all used,
+            // then they are not filled and board is incomplete
+            if(t->type == NODE || t->type == TERMINAL){
+                if(t->currentConnections < t->maxConnections){
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 bool isColorFilled(Tile * pBoard, Color color){
-    return false;
+    // i - row
+    // j - col
+    for(int i=0;i<boardHeight;i++){
+        for(int j=0;j<boardWidth;j++){
+            Tile * t = &pBoard[pos2D(i, j)];
+            // For all NODE and TERMINALs that are COLOR
+            // If connections are not all used,
+            // then the color path is incomplete
+            if((t->type == NODE || t->type == TERMINAL) && t->color == color){
+                if(t->currentConnections < t->maxConnections){
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+Tile * getFirstAvailiableTerminal(Tile * pBoard){
+    // i - row
+    // j - col
+    for(int i=0;i<boardHeight;i++){
+        for(int j=0;j<boardWidth;j++){
+            Tile * t = &pBoard[pos2D(i, j)];
+            if(t->type == TERMINAL){
+                if(t->currentConnections == 0){
+                    return t;
+                }
+            }
+        }
+    }
+    return NULL;
+}
+
+bool isEndTerminal(Tile * pBoard, Tile * pTerminal) {
+    // i - row
+    // j - col
+    for(int i=0;i<boardHeight;i++){
+        for(int j=0;j<boardWidth;j++){
+            Tile * t = &pBoard[pos2D(i, j)];
+            if(t->type == TERMINAL && t->color == pTerminal->color &&
+            t->currentConnections < t->maxConnections){
+                // there exists one that is not filled
+                return false;
+            }
+        }
+    }
+    // both terminals are filled
+    return true;
 }
 
 void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color){
+    printf("----------------------\n");
+    printf("current color: %d\n", color);
+    printf("moving to position: %d, %d\n", currentRow, currentColumn);
+    printBoard(pBoard);
+    printf("----------------------\n");
+
+    // Update the board with our most recent move
+    pBoard[pos2D(currentRow, currentColumn)].currentConnections += 1;
+
     // Board is solved, print solution
     if(isBoardSolved(pBoard)){
+        printf("SOLUTION FOUND!!!!\n");
         printBoard(pBoard);
         return;
     }
 
-    // Current position on a TERMINAL
+    // Current position on a TERMINAL and it's the END of a path
     Tile currentTile = pBoard[pos2D(currentRow, currentColumn)];
-    if(currentTile.type == TERMINAL){
+    if(currentTile.type == TERMINAL && isEndTerminal(pBoard, &currentTile)){
+        printf("WE HIT AN END TERMINAL, RUN PATH CHECK!\n");
         // check if the color is completed
         if(isColorFilled(pBoard, currentTile.color)){
             // if complete, we need to jump to another color's start terminal
-            // moveAndSolve()
+            // locate an unfilled color terminal and move there
+            printf("path is valid\n");
+            Tile * newTerminal = getFirstAvailiableTerminal(pBoard);
+            moveAndSolve(pBoard, newTerminal->row, newTerminal->col, newTerminal->color);
+            // we're back, reset the terminal we moved onto and this a dead end
+            newTerminal->currentConnections = 0;
+            return;
         }
         else {
-            // this is a starting terminal
-            // OR
             // path does not cover all colored nodes for this path
-            
-            // either way,
-            // go look for valid directions to move
-            // (if none) -> this path is a dead end and we go back up
+            printf("path is invalid, go back\n");
+            return;
         }
     }
 
@@ -203,19 +282,58 @@ void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color)
     // (upleft/upright/downleft/downright)
     for(int i=0; i<8; i++){
         // pick a direction
+        int rowOffset = directions[i][0];
+        int colOffset = directions[i][1];
         
         // Each move is 2 moves in that direction (move to EDGE then move to NODE)
         // Make sure move is in bounds
+        int newEdgeRow = currentRow + rowOffset;
+        int newEdgeCol = currentColumn + colOffset;
+        int newNodeRow = currentRow + rowOffset*2;
+        int newNodeCol = currentColumn + colOffset*2;
+        // printf("testing offsets: %d, %d", rowOffset, colOffset);
+        if(newNodeRow >= boardHeight || newNodeCol >= boardWidth
+            || newNodeRow < 0 || newNodeCol < 0) {
+            // skip this direction since it is out of bounds
+            continue;
+        }
         // Check if EDGE has connection space (1 away)
-        // Check if NODE or TERMINAL has connection space (2 away)
+        Tile * pNewEdge = &pBoard[pos2D(newEdgeRow, newEdgeCol)];
+        if(pNewEdge->currentConnections >= pNewEdge->maxConnections){
+            // skip this direction, edge is occupied
+            continue;
+        }
+    
+        // Check if NODE or TERMINAL is the same color or is neutral color(2 away)
+        Tile * pNewNode = &pBoard[pos2D(newNodeRow, newNodeCol)];
+        if(pNewNode->color != color && pNewNode->color != X_NEUTRAL){
+            // skip, not the same color
+            continue;
+        }
 
-        // Move is valid
-        // Save the move
-        // Update the board
-        // moveAndSolve()
-        // Undo the move and update the board
+        // Check if NODE or TERMINAL has connection space (2 away)
+        if(pNewNode->currentConnections >= pNewNode->maxConnections){
+            // skip this direction, node is occupied/full
+            continue;
+        }
+
+        // MOVE IS VALID!!
+        // Update board with the new edge
+        pNewEdge->currentConnections = 1;
+        pNewEdge->ch = edgeSymbols[i];
+        // Move to the new position
+        printf("we are moving with these offsets: %d %d\n", rowOffset, colOffset);
+        moveAndSolve(pBoard, newNodeRow, newNodeCol, color);
+
+        // when we return, that means we hit a dead end and we need to undo the move
+        // clear the edge
+        pNewEdge->currentConnections = 0;
+        pNewEdge->ch = '.';
+        // clear the node
+        pNewNode->currentConnections -= 1;
     }
 
-    // All moves from current position have been explored
+    // All directional moves from current position have been explored
+    printf("NO VALID DIRECTIONS, GO BACK!\n");
     return;
 }

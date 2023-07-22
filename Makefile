@@ -1,4 +1,4 @@
-EXEC=solver
+EXEC=solve
 
 build: main.c main.h
 	gcc main.c -o ${EXEC}
