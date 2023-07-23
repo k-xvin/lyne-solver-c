@@ -1,8 +1,10 @@
 #include <stdbool.h>
+#include <stdint.h>
 
 // Structs
 typedef enum Color { COLOR_A, COLOR_B, COLOR_C, COLOR_NEUTRAL } Color;
 typedef enum Type { EDGE, NODE, TERMINAL} Type;
+// Names mapped to chars for convenience
 typedef enum Symbol {
     A_TERMINAL  = 'A',
     A_NODE      = 'a',
@@ -15,18 +17,27 @@ typedef enum Symbol {
     NODE_3      = '3',
     NODE_4      = '4',
 
-    EDGE_EMPTY  = '.',
-    NODE_EMPTY  = 'x',
+    EDGE_EMPTY      = '.',
+    EDGE_UP         = '|',
+    EDGE_DOWN       = '|',
+    EDGE_LEFT       = '-',
+    EDGE_RIGHT      = '-',
+    EDGE_UP_LEFT    = '\\',
+    EDGE_UP_RIGHT   = '/',
+    EDGE_DOWN_LEFT  = '/',
+    EDGE_DOWN_RIGHT = '\\',
+
+    NODE_EMPTY      = 'x',
 } Symbol; 
 
 typedef struct Tile {
-    char ch;
+    Symbol symbol;
     Color color;
     Type type;
-    int maxConnections;
-    int currentConnections;
-    int row;
-    int column;
+    uint8_t maxConnections;
+    uint8_t currentConnections;
+    uint8_t row;
+    uint8_t column;
 } Tile;
 
 // Row, col
@@ -41,25 +52,27 @@ static int DIRECTION[8][2] = {
     {1,1},      // down-right
 };
 
-static char DIRECTION_CHAR[8] = {
-    '|',
-    '|',
-    '-',
-    '-',
-    '\\',
-    '/',
-    '/',
-    '\\'
+static char DIRECTION_SYMBOL[8] = {
+    EDGE_UP,
+    EDGE_DOWN,
+    EDGE_LEFT,
+    EDGE_RIGHT,
+    EDGE_UP_LEFT,
+    EDGE_UP_RIGHT,
+    EDGE_DOWN_LEFT,
+    EDGE_DOWN_RIGHT
 };
 
 // Functions
 Tile * mallocBoardFromFile(char * fileName);
-void initializeTile(Tile * tile, char c, int row, int col);
+void initializeTile(Tile * pTile, char c, int row, int col);
 
-int pos2D(int row, int col);
 void printBoard(Tile * pBoard);
+Tile * getTile (Tile * pBoard, uint8_t row, uint8_t col);
 
-void moveAndSolve(Tile * pBoard, int row, int column, Color color); 
+// Color is retained when we move through neutral tiles
+void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color); 
+
 bool isBoardSolved(Tile * pBoard);
 bool isColorFilled(Tile * pBoard, Color color);
 Tile * getFirstAvailiableTerminal(Tile * pBoard);
