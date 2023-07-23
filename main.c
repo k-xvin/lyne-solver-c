@@ -22,9 +22,8 @@ int main(int argc, char *argv[]) {
     if(pBoard == NULL) return 1;
 
     // solve the board
-    // solveBoard(pBoard);
     Tile * startingTerminal = getFirstAvailiableTerminal(pBoard);
-    moveAndSolve(pBoard, startingTerminal->row, startingTerminal->col, startingTerminal->color);
+    moveAndSolve(pBoard, startingTerminal->row, startingTerminal->column, startingTerminal->color);
 
     // free board
     free(pBoard);
@@ -99,10 +98,10 @@ Tile * mallocBoardFromFile(char * fileName){
 void initializeTile(Tile * tile, char ch, int row, int col){
     // tile defaults
     tile->row = row;
-    tile->col = col;
+    tile->column = col;
     tile->ch = ch;
     tile->type = NODE;
-    tile->color = X_NEUTRAL;
+    tile->color = COLOR_NEUTRAL;
     tile->currentConnections = 0;
     tile->maxConnections = 1;
     
@@ -112,19 +111,19 @@ void initializeTile(Tile * tile, char ch, int row, int col){
         case 'A':
             tile->type = TERMINAL;
         case 'a': // fall thru 
-            tile->color = A_DIAMOND;
+            tile->color = COLOR_A;
             break;
 
         case 'B':
             tile->type = TERMINAL;
         case 'b': // fall thru 
-            tile->color = B_TRIANGLE;
+            tile->color = COLOR_B;
             break;
 
         case 'C':
             tile->type = TERMINAL;
         case 'c': // fall thru 
-            tile->color = C_SQUARE;
+            tile->color = COLOR_C;
             break;
 
         // nodes with multi connections
@@ -272,7 +271,7 @@ void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color)
                 return;
             }
             else {
-                moveAndSolve(pBoard, newTerminal->row, newTerminal->col, newTerminal->color);
+                moveAndSolve(pBoard, newTerminal->row, newTerminal->column, newTerminal->color);
             }
             // we're back, reset the terminal we moved onto and this a dead end
             newTerminal->currentConnections = 0;
@@ -290,8 +289,8 @@ void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color)
     // (upleft/upright/downleft/downright)
     for(int i=0; i<8; i++){
         // pick a direction
-        int rowOffset = directions[i][0];
-        int colOffset = directions[i][1];
+        int rowOffset = DIRECTION[i][0];
+        int colOffset = DIRECTION[i][1];
         
         // Each move is 2 moves in that direction (move to EDGE then move to NODE)
         // Make sure move is in bounds
@@ -314,7 +313,7 @@ void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color)
     
         // Check if NODE or TERMINAL is the same color or is neutral color(2 away)
         Tile * pNewNode = &pBoard[pos2D(newNodeRow, newNodeCol)];
-        if(pNewNode->color != color && pNewNode->color != X_NEUTRAL){
+        if(pNewNode->color != color && pNewNode->color != COLOR_NEUTRAL){
             // skip, not the same color
             continue;
         }
@@ -328,7 +327,8 @@ void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color)
         // MOVE IS VALID!!
         // Update board with the new edge
         pNewEdge->currentConnections = 1;
-        pNewEdge->ch = edgeSymbols[i];
+        pNewEdge->ch = DIRECTION_CHAR[i];
+        pNewEdge->color = color;
         // Move to the new position
         printf("we are moving with these offsets: %d %d\n", rowOffset, colOffset);
         moveAndSolve(pBoard, newNodeRow, newNodeCol, color);
@@ -337,6 +337,7 @@ void moveAndSolve(Tile * pBoard, int currentRow, int currentColumn, Color color)
         // clear the edge
         pNewEdge->currentConnections = 0;
         pNewEdge->ch = '.';
+        pNewEdge->color = COLOR_NEUTRAL;
         // clear the node
         pNewNode->currentConnections -= 1;
     }

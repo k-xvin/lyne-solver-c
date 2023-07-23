@@ -1,8 +1,23 @@
 #include <stdbool.h>
 
 // Structs
-typedef enum Color { A_DIAMOND, B_TRIANGLE, C_SQUARE, X_NEUTRAL } Color;
+typedef enum Color { COLOR_A, COLOR_B, COLOR_C, COLOR_NEUTRAL } Color;
 typedef enum Type { EDGE, NODE, TERMINAL} Type;
+typedef enum Symbol {
+    A_TERMINAL  = 'A',
+    A_NODE      = 'a',
+    B_TERMINAL  = 'B',
+    B_NODE      = 'b',
+    C_TERMINAL  = 'C',
+    C_NODE      = 'c',
+
+    NODE_2      = '2',
+    NODE_3      = '3',
+    NODE_4      = '4',
+
+    EDGE_EMPTY  = '.',
+    NODE_EMPTY  = 'x',
+} Symbol; 
 
 typedef struct Tile {
     char ch;
@@ -11,11 +26,11 @@ typedef struct Tile {
     int maxConnections;
     int currentConnections;
     int row;
-    int col;
+    int column;
 } Tile;
 
 // Row, col
-static int directions[8][2] = {
+static int DIRECTION[8][2] = {
     {-1,0},     // up
     {1,0},      // down
     {0,-1},     // left
@@ -26,7 +41,7 @@ static int directions[8][2] = {
     {1,1},      // down-right
 };
 
-static char edgeSymbols[8] = {
+static char DIRECTION_CHAR[8] = {
     '|',
     '|',
     '-',
