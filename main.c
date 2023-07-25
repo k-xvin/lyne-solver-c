@@ -5,10 +5,8 @@
 #include "main.h"
 
 // Globals
-static int fileWidth = 0;
-static int fileHeight = 0;
-static int boardWidth = 0;
-static int boardHeight = 0;
+static uint8_t boardWidth = 0;
+static uint8_t boardHeight = 0;
 
 int main(int argc, char *argv[]) {
     if(argc != 2) {
@@ -33,11 +31,11 @@ int main(int argc, char *argv[]) {
 }
 
 Tile * mallocBoardFromFile(char * fileName){
-#define MAX_WIDTH 20
+    uint8_t maxReadWidth = 255;
     
     // open the file
     FILE *file;
-    char line[MAX_WIDTH];
+    char line[maxReadWidth];
     file = fopen(fileName, "r");
     if (file == NULL) {
         printf("Unable to open the file.\n");
@@ -45,8 +43,10 @@ Tile * mallocBoardFromFile(char * fileName){
     }
     printf("Reading \"%s\" ...\n", fileName);
 
+    int fileWidth = 0; 
+    int fileHeight = 0;
     // First, read the board file to get the size of the board
-    while (fgets(line, MAX_WIDTH, file) != NULL) {
+    while (fgets(line, maxReadWidth, file) != NULL) {
         // initialize width of board from the first line
         if(fileWidth == 0){
             // strcspn() gets the length of string up the the \n character
@@ -76,7 +76,7 @@ Tile * mallocBoardFromFile(char * fileName){
 
     // Now read the file again and fill in the board with tiles
     int fileRow = 0;
-    while (fgets(line, MAX_WIDTH, file) != NULL) {
+    while (fgets(line, maxReadWidth, file) != NULL) {
         for(int fileCol=0; fileCol<fileWidth; fileCol++){
             // nodes are shifted to their proper positions in the board
             char currentChar = line[fileCol];
@@ -99,7 +99,7 @@ void initializeTile(Tile * tile, char ch, int row, int col){
     // tile defaults
     tile->row = row;
     tile->column = col;
-    tile->symbol = ch;
+    // tile->symbol = ch;
     tile->type = NODE;
     tile->color = COLOR_NEUTRAL;
     tile->currentConnections = 0;
@@ -139,7 +139,7 @@ void initializeTile(Tile * tile, char ch, int row, int col){
 
         // edge tile
         case '.':
-            tile->type = EDGE;
+            tile->type = EDGE_EMPTY;
             break;
 
         // empty tile
@@ -158,9 +158,7 @@ void printBoard(Tile * pBoard){
     for(int i=0;i<boardHeight;i++){
         for(int j=0;j<boardWidth;j++){
             Tile * t = getTile(pBoard, i, j);
-            // printf("%c | color: %d | type: %d | max: %d \n", t->c, t->color, t-> type, t->maxConnections);
-            printf("%c", t->symbol);
-            //🡠🡢🡡🡣🡤🡥🡦🡧
+            printf("%s", TYPE_SYMBOLS[t->type][t->color + t->maxConnections - 1]);
         }
         printf("\n");
     }
@@ -170,9 +168,6 @@ Tile * getTile(Tile * pBoard, uint8_t row, uint8_t column){
     return &pBoard[row*boardWidth + column];
 }
 
-int pos2D(int row, int col){
-    return row*boardWidth + col;
-}
 bool isBoardSolved(Tile * pBoard){
     // i - row
     // j - col
@@ -245,7 +240,6 @@ bool isEndTerminal(Tile * pBoard, Tile * pTerminal) {
 void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
     uint8_t currentRow = pCurrentTile->row;
     uint8_t currentColumn = pCurrentTile->column;
-    // Color color = pCurrentTile->color;
 
     printf("----------------------\n");
     printf("current color: %d\n", color);
@@ -264,7 +258,6 @@ void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
     }
 
     // Current position on a TERMINAL and it's the END of a path
-    // Tile * pCurrentTile = getTile(pBoard, currentRow, currentColumn);
     if(pCurrentTile->type == TERMINAL && isEndTerminal(pBoard, pCurrentTile)){
         printf("WE HIT AN END TERMINAL, RUN PATH CHECK!\n");
         // check if the color is completed
@@ -336,7 +329,7 @@ void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
         // MOVE IS VALID!!
         // Update board with the new edge
         pNewEdge->currentConnections = 1;
-        pNewEdge->symbol = DIRECTION_SYMBOL[i];
+        pNewEdge->type = DIRECTION_EDGE_TYPE[i];
         pNewEdge->color = color;
         // Move to the new position
         printf("we are moving with these offsets: %d %d\n", rowOffset, colOffset);
@@ -345,7 +338,7 @@ void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
         // when we return, that means we hit a dead end and we need to undo the move
         // clear the edge
         pNewEdge->currentConnections = 0;
-        pNewEdge->symbol = EDGE_EMPTY;
+        pNewEdge->type = EDGE_EMPTY;
         pNewEdge->color = COLOR_NEUTRAL;
         // clear the node
         pNewNode->currentConnections -= 1;

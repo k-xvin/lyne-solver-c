@@ -3,35 +3,40 @@
 
 // Structs
 typedef enum Color { COLOR_A, COLOR_B, COLOR_C, COLOR_NEUTRAL } Color;
-typedef enum Type { EDGE, NODE, TERMINAL} Type;
-// Names mapped to chars for convenience
-typedef enum Symbol {
-    A_TERMINAL  = 'A',
-    A_NODE      = 'a',
-    B_TERMINAL  = 'B',
-    B_NODE      = 'b',
-    C_TERMINAL  = 'C',
-    C_NODE      = 'c',
+typedef enum Type { 
+    EDGE_EMPTY,
+    EDGE_UP,
+    EDGE_DOWN,
+    EDGE_LEFT,
+    EDGE_RIGHT,
+    EDGE_UP_LEFT,
+    EDGE_UP_RIGHT,
+    EDGE_DOWN_LEFT,
+    EDGE_DOWN_RIGHT, 
+    NODE, 
+    TERMINAL
+} Type;
 
-    NODE_2      = '2',
-    NODE_3      = '3',
-    NODE_4      = '4',
-
-    EDGE_EMPTY      = '.',
-    EDGE_UP         = '|',
-    EDGE_DOWN       = '|',
-    EDGE_LEFT       = '-',
-    EDGE_RIGHT      = '-',
-    EDGE_UP_LEFT    = '\\',
-    EDGE_UP_RIGHT   = '/',
-    EDGE_DOWN_LEFT  = '/',
-    EDGE_DOWN_RIGHT = '\\',
-
-    NODE_EMPTY      = 'x',
-} Symbol; 
+// Symbols as strings in order to use unicode characters 
+// and more flexibility with printing format
+// mapped 1:1 with the enum TYPE
+// second dimension represents the COLOR
+// TYPE_SYMBOLS[type][color + maxConnections - 1]
+static char * TYPE_SYMBOLS[11][7] = {
+    {".", ".", ".", "."}, // EDGE_EMPTY,
+    {"|", "|", "|", "|"}, // EDGE_UP,
+    {"|", "|", "|", "|"}, // EDGE_DOWN,
+    {"-", "-", "-", "-"}, // EDGE_LEFT,
+    {"-", "-", "-", "-"}, // EDGE_RIGHT,
+    {"\\", "\\", "\\", "\\"}, // EDGE_UP_LEFT,
+    {"/", "/", "/", "/"}, // EDGE_UP_RIGHT,
+    {"/", "/", "/", "/"}, // EDGE_DOWN_LEFT,
+    {"\\", "\\", "\\", "\\"}, // EDGE_DOWN_RIGHT, 
+    {"a", "b", "c", "o", "2", "3", "4"}, // NODE
+    {"a", "b", "c", "T"}, // TERMINAL
+};
 
 typedef struct Tile {
-    Symbol symbol;
     Color color;
     Type type;
     uint8_t maxConnections;
@@ -52,7 +57,7 @@ static int DIRECTION[8][2] = {
     {1,1},      // down-right
 };
 
-static char DIRECTION_SYMBOL[8] = {
+static Type DIRECTION_EDGE_TYPE[8] = {
     EDGE_UP,
     EDGE_DOWN,
     EDGE_LEFT,
