@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "main.h"
+
+#define BILLION  1000000000.0
 
 // Globals
 static uint8_t boardWidth = 0;
@@ -19,15 +22,28 @@ int main(int argc, char *argv[]) {
     char * fileName = argv[1];
     Tile * pBoard = mallocBoardFromFile(fileName);
     if(pBoard == NULL) return 1;
+
+
     
     // solve the board
     Tile * startingTerminal = getFirstAvailiableTerminal(pBoard);
+
+    struct timespec start, end;
+    clock_gettime(CLOCK_REALTIME, &start);
+
     moveAndSolve(pBoard, startingTerminal, startingTerminal->color);
+
+    printf("Total Solutions: %d\n", solutionCount);
+    clock_gettime(CLOCK_REALTIME, &end);
+    // time_spent = end - start
+    double time_spent = (end.tv_sec - start.tv_sec) +
+                        (end.tv_nsec - start.tv_nsec) / BILLION;
+    // time elapsed in seconds
+    printf("%f", time_spent);
 
     // free board
     free(pBoard);
 
-    printf("Total Solutions: %d\n", solutionCount);
     return 0;
 }
 
