@@ -7,6 +7,7 @@
 // Globals
 static uint8_t boardWidth = 0;
 static uint8_t boardHeight = 0;
+static int solutionCount = 0;
 
 int main(int argc, char *argv[]) {
     if(argc != 2) {
@@ -26,7 +27,7 @@ int main(int argc, char *argv[]) {
     // free board
     free(pBoard);
 
-    printf("\n\ndone\n");
+    printf("Total Solutions: %d\n", solutionCount);
     return 0;
 }
 
@@ -99,7 +100,6 @@ void initializeTile(Tile * tile, char ch, int row, int col){
     // tile defaults
     tile->row = row;
     tile->column = col;
-    // tile->symbol = ch;
     tile->type = NODE;
     tile->color = COLOR_NEUTRAL;
     tile->currentConnections = 0;
@@ -154,7 +154,6 @@ void initializeTile(Tile * tile, char ch, int row, int col){
 void printBoard(Tile * pBoard){
     // i - row
     // j - col
-    printf("\n");
     for(int i=0;i<boardHeight;i++){
         for(int j=0;j<boardWidth;j++){
             Tile * t = getTile(pBoard, i, j);
@@ -162,6 +161,7 @@ void printBoard(Tile * pBoard){
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 Tile * getTile(Tile * pBoard, uint8_t row, uint8_t column){
@@ -241,30 +241,34 @@ void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
     uint8_t currentRow = pCurrentTile->row;
     uint8_t currentColumn = pCurrentTile->column;
 
-    printf("----------------------\n");
-    printf("current color: %d\n", color);
-    printf("moving to position: %d, %d\n", currentRow, currentColumn);
-    printBoard(pBoard);
-    printf("----------------------\n");
+    // printf("----------------------\n");
+    // printf("current color: %d\n", color);
+    // printf("moving to position: %d, %d\n", currentRow, currentColumn);
+    // printBoard(pBoard);
+    // printf("----------------------\n");
 
     // Update the board with our most recent move
     pCurrentTile->currentConnections += 1;
 
     // Board is solved, print solution
+    // TODO: don't need to check this every time, 
+    //       only need to check when we reach last terminal
     if(isBoardSolved(pBoard)){
-        printf("SOLUTION FOUND!!!!\n");
+        // printf("SOLUTION FOUND!!!!\n");
+        solutionCount++;
+        printf("Solution %d\n", solutionCount);
         printBoard(pBoard);
         return;
     }
 
     // Current position on a TERMINAL and it's the END of a path
     if(pCurrentTile->type == TERMINAL && isEndTerminal(pBoard, pCurrentTile)){
-        printf("WE HIT AN END TERMINAL, RUN PATH CHECK!\n");
+        // printf("WE HIT AN END TERMINAL, RUN PATH CHECK!\n");
         // check if the color is completed
         if(isColorFilled(pBoard, pCurrentTile->color)){
             // if complete, we need to jump to another color's start terminal
             // locate an unfilled color terminal and move there
-            printf("path is valid\n");
+            // printf("path is valid\n");
             Tile * newTerminal = getFirstAvailiableTerminal(pBoard);
             if(newTerminal == NULL){
                 // all terminals are filled but the board is not solved
@@ -281,7 +285,7 @@ void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
         }
         else {
             // path does not cover all colored nodes for this path
-            printf("path is invalid, go back\n");
+            // printf("path is invalid, go back\n");
             return;
         }
     }
@@ -332,7 +336,7 @@ void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
         pNewEdge->type = DIRECTION_EDGE_TYPE[i];
         pNewEdge->color = color;
         // Move to the new position
-        printf("we are moving with these offsets: %d %d\n", rowOffset, colOffset);
+        // printf("we are moving with these offsets: %d %d\n", rowOffset, colOffset);
         moveAndSolve(pBoard, pNewNode, color);
 
         // when we return, that means we hit a dead end and we need to undo the move
@@ -345,6 +349,6 @@ void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
     }
 
     // All directional moves from current position have been explored
-    printf("NO VALID DIRECTIONS, GO BACK!\n");
+    // printf("NO VALID DIRECTIONS, GO BACK!\n");
     return;
 }
