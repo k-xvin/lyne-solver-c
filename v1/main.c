@@ -10,10 +10,8 @@
 // Globals
 static uint8_t boardWidth = 0;
 static uint8_t boardHeight = 0;
-// static bool colorSolved = {false, false, false};
-
 static int solutionCount = 0;
-static int movesMade = 0;
+
 int main(int argc, char *argv[]) {
     if(argc != 2) {
         printf("usage: ./solver <board.txt>");
@@ -25,6 +23,8 @@ int main(int argc, char *argv[]) {
     Tile * pBoard = mallocBoardFromFile(fileName);
     if(pBoard == NULL) return 1;
 
+
+    
     // solve the board
     Tile * startingTerminal = getFirstAvailiableTerminal(pBoard);
 
@@ -34,7 +34,6 @@ int main(int argc, char *argv[]) {
     moveAndSolve(pBoard, startingTerminal, startingTerminal->color);
 
     printf("Total Solutions: %d\n", solutionCount);
-    printf("Total Moves Explored: %d\n", movesMade);
     clock_gettime(CLOCK_REALTIME, &end);
     // time_spent = end - start
     double time_spent = (end.tv_sec - start.tv_sec) +
@@ -117,7 +116,7 @@ void initializeTile(Tile * tile, char ch, int row, int col){
     // tile defaults
     tile->row = row;
     tile->column = col;
-    tile->type = NODE_1;
+    tile->type = NODE;
     tile->color = COLOR_NEUTRAL;
     tile->currentConnections = 0;
     tile->maxConnections = 1;
@@ -145,15 +144,12 @@ void initializeTile(Tile * tile, char ch, int row, int col){
 
         // nodes with multi connections
         case '2':
-            tile->type = NODE_2;
             tile->maxConnections = 2;
             break;
         case '3':
-            tile->type = NODE_3;
             tile->maxConnections = 3;
             break;
         case '4':
-            tile->type = NODE_4;
             tile->maxConnections = 4;
             break;
 
@@ -177,16 +173,35 @@ void printBoard(Tile * pBoard){
     for(int i=0;i<boardHeight;i++){
         for(int j=0;j<boardWidth;j++){
             Tile * t = getTile(pBoard, i, j);
-            printf("%s", TYPE_SYMBOLS[t->type][t->color]);
+            printf("%s", TYPE_SYMBOLS[t->type][t->color + t->maxConnections - 1]);
         }
         printf("\n");
     }
     printf("\n");
 }
 
+Tile * getTile(Tile * pBoard, uint8_t row, uint8_t column){
+    return &pBoard[row*boardWidth + column];
+}
 
-
-
+bool isBoardSolved(Tile * pBoard){
+    // i - row
+    // j - col
+    for(int i=0;i<boardHeight;i++){
+        for(int j=0;j<boardWidth;j++){
+            Tile * t = getTile(pBoard, i ,j);
+            // For all NODE and TERMINALs
+            // If connections are not all used,
+            // then they are not filled and board is incomplete
+            if(t->type == NODE || t->type == TERMINAL){
+                if(t->currentConnections < t->maxConnections){
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
 bool isColorFilled(Tile * pBoard, Color color){
     // i - row
     // j - col
@@ -196,7 +211,7 @@ bool isColorFilled(Tile * pBoard, Color color){
             // For all NODE and TERMINALs that are COLOR
             // If connections are not all used,
             // then the color path is incomplete
-            if((isTileOfTypeNode(t) || t->type == TERMINAL) && t->color == color){
+            if((t->type == NODE || t->type == TERMINAL) && t->color == color){
                 if(t->currentConnections < t->maxConnections){
                     return false;
                 }
@@ -239,8 +254,6 @@ bool isEndTerminal(Tile * pBoard, Tile * pTerminal) {
 }
 
 void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
-    movesMade++;
-
     uint8_t currentRow = pCurrentTile->row;
     uint8_t currentColumn = pCurrentTile->column;
 
@@ -253,18 +266,19 @@ void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
     // Update the board with our most recent move
     pCurrentTile->currentConnections += 1;
 
+    // Board is solved, print solution
+    // TODO: don't need to check this every time, 
+    //       only need to check when we reach last terminal
+    if(isBoardSolved(pBoard)){
+        // printf("SOLUTION FOUND!!!!\n");
+        solutionCount++;
+        printf("Solution %d\n", solutionCount);
+        printBoard(pBoard);
+        return;
+    }
+
     // Current position on a TERMINAL and it's the END of a path
     if(pCurrentTile->type == TERMINAL && isEndTerminal(pBoard, pCurrentTile)){
-
-        // check if Board is solved when we reach an end path
-        if(isBoardSolved(pBoard)){
-            // printf("SOLUTION FOUND!!!!\n");
-            solutionCount++;
-            printf("Solution %d\n", solutionCount);
-            printBoard(pBoard);
-            return;
-        }
-
         // printf("WE HIT AN END TERMINAL, RUN PATH CHECK!\n");
         // check if the color is completed
         if(isColorFilled(pBoard, pCurrentTile->color)){
@@ -353,32 +367,4 @@ void moveAndSolve(Tile * pBoard, Tile * pCurrentTile, Color color){
     // All directional moves from current position have been explored
     // printf("NO VALID DIRECTIONS, GO BACK!\n");
     return;
-}
-
-// HELPERS
-bool isTileOfTypeNode(Tile * pTile){
-    Type type = pTile->type;
-    return type >= NODE_1 && type <= NODE_4;
-}
-
-Tile * getTile(Tile * pBoard, uint8_t row, uint8_t column){
-    return &pBoard[row*boardWidth + column];
-}
-
-bool isBoardSolved(Tile * pBoard){
-    // i = row, j = col
-    for(int i=0;i<boardHeight;i++){
-        for(int j=0;j<boardWidth;j++){
-            Tile * t = getTile(pBoard, i ,j);
-            // For all NODE and TERMINALs
-            // If connections are not all used,
-            // then they are not filled and board is incomplete
-            if(isTileOfTypeNode(t) || t->type == TERMINAL){
-                if(t->currentConnections < t->maxConnections){
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
 }
